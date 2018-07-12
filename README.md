@@ -1,7 +1,5 @@
-SQL
+SQL Notes
 ==========
-
-I have collected a bunch of sample problems here and showed SQL queries to solve them. I believe this is the best way to learn SQL and master it.
 
 ### Select top 3 without TOP/LIMIT/ROWNUM
 
@@ -113,6 +111,11 @@ Using **rank() over()**
 
 ```sql
 RANK() OVER (PARTITION BY column_ID ORDER BY column_ID) AS rank_id
+```
+
+Other similar queries:
+```sql
+row_number() over(order by customer_atg_id) as record_id
 ```
 
 Maximun Quantity in each of the *OrderID*:
@@ -456,7 +459,8 @@ Note:
 ```sql
 select app_id, avg(rate) from (
 select user_id, app_id, cast(count(case when event = 'click' then 1 else 0 end) as float) / cast(count(case when event = 'imp' then 1 else 0 end) as float) as rate
-from table) sub
+from table
+group by user_id, app_id) sub
 group by app_id
 ```
 
@@ -473,6 +477,7 @@ where r.pageid IS NULL;
 Note: 
 
   - The trick of using **IS NULL** 
+  - Whenever the question is something in table_a and not in table_b, use **'='** and **'IS NULL'**
 
 ### **Exists**
 
@@ -677,4 +682,22 @@ Note:
   - group by ShipperID, then max() select the max CustomerID row ordered according to EmployeeID in group ShipperID
   - EmployeeID is not in group by or aggregation count() or sum()
 
+### Sampling With rand()
+
+Randomly select 100 records
+```sql
+select atg_id, map_id
+from propensity
+order by rand() 
+LIMIT 10
+```
+
+or 
+```sql
+select atg_id, map_id
+from propensity
+distribute by rand()
+sort by rand() 
+LIMIT 10
+```
 
