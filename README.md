@@ -29,6 +29,64 @@ Note:
   - No need to use **ORDER BY** when using **b.Quantity >= a.Quantity**
   - See below **Second Largest** for more explanation
 
+### Self Join
+
+Rank Scores
+
+| Id | Score |
+|----|-------|
+| 1  | 3.50  |
+| 2  | 3.65  |
+| 3  | 4.00  |
+| 4  | 3.85  |
+| 5  | 4.00  |
+| 6  | 3.65  |
+
+as
+
+| Score | Rank |
+|-------|------|
+| 4.00  | 1    |
+| 4.00  | 1    |
+| 3.85  | 2    |
+| 3.65  | 3    |
+| 3.65  | 3    |
+| 3.50  | 4    |
+
+```sql
+select a.Score, (select count(*) from (select distinct(Score) from Scores
+order by Score desc) c where c.Score >= a.Score) as Rank
+from (
+select Score from Scores
+order by Score desc) a
+```
+
+[Rank Quantity](https://www.w3schools.com/sql/trysql.asp?filename=trysql_select_all) 
+
+```sql
+select a.Quantity, (select count(*) from (select distinct(Quantity) from OrderDetails
+order by Quantity desc) c where c.Quantity >= a.Quantity) as Rank
+from (
+select Quantity from OrderDetails
+order by Quantity desc) a
+```
+
+or,
+
+```sql
+select c.Quantity, sub3.rnk as rank from OrderDetails c
+join
+(select sub1.Quantity, (select count(*) from (SELECT distinct(Quantity) FROM OrderDetails) sub2 where sub2.Quantity >= sub1.Quantity) as rnk 
+from 
+(SELECT distinct(Quantity) FROM OrderDetails) sub1) sub3
+on c.Quantity = sub3.Quantity
+order by Rank asc
+```
+
+Note:
+  - **self join** is very powerfull. 
+  - Use **select count(*) from table a where c.Score >= a.Score** to create a new column
+  
 ### Second Largest 
 
 Using **LIMIT**
@@ -118,8 +176,7 @@ Other similar queries:
 row_number() over(order by customer_atg_id) as record_id
 ```
 
-Maximun Quantity in each of the *OrderID*:
-https://www.w3schools.com/sql/trysql.asp?filename=trysql_select_all
+[Maximun Quantity in each of the *OrderID*:](https://www.w3schools.com/sql/trysql.asp?filename=trysql_select_all)
 
 ```sql
 SELECT OrderDetailID, OrderID, max(Quantity) FROM OrderDetails
@@ -128,6 +185,8 @@ group by OrderID
 
 Note: 
   - **MAX** acts on each of the group, similarly as **MIN**, **SUM**, etc. 
+  - In some database, this query will not work as **OrderDetailID** is not in **group by**.
+    - In [w3schools](https://www.w3schools.com/sql/trysql.asp?filename=trysql_select_all), it works.
   
 ### Between Date
 
@@ -544,7 +603,7 @@ SELECT COUNT(DISTINCT c1.Member_id)
 FROM company c1 
 JOIN company c2
 ON c1.Member_id = c2.Member_id 
-AND c1.Company = 'Microsoft' 
+WHERE c1.Company = 'Microsoft' 
 AND c2.Company = 'Google'
 AND c1.Year_Start < c2.Year_Start
 ```
@@ -560,8 +619,8 @@ WHERE c1.Company = 'Microsoft'
 AND c2.Company = 'Google'
 AND c1.Year_Start < c2.Year_Start
 LEFT JOIN company c3
-WHERE c3.Member_id = c1.Member_id
-AND c3.Year_Start BETWEEN c1.Year_Start AND c2.Year_Start
+ON c3.Member_id = c1.Member_id
+WHERE c3.Year_Start BETWEEN c1.Year_Start AND c2.Year_Start
 AND c3.Member_id IS NULL
 ```
 
@@ -663,24 +722,68 @@ Group By ShipperName
 给一个table，studentid, courseid, grade, sql语句输出student最高成绩的一门课， 如果分数相同，输出courseid小的
 
 ```sql
-SELECT studentid, courseid, MAX(grade) 
-FROM table
-GROUP BY studentid
-ORDER BY grade desc, courseid asc
-```
-
-StudentID -> ShipperID, courseID -> EmployeeID, grade -> CustomerID
-https://www.w3schools.com/sql/trysql.asp?filename=trysql_select_all
-
-```sql
-SELECT ShipperID, EmployeeID, max(CustomerID) FROM Orders
-Group By ShipperID
-Order By CustomerID desc, EmployeeID asc
+select b.studentid, min(b.courseid), max(b.grade) from table b
+join (
+select studentid, max(grade) as grade from table c
+group by studentid
+) a
+on a.studentid = b.studentid 
+and a.grade = b.grade
+group by b.studentid
 ```
 
 Note: 
+  - ```sql
+    select studentid, min(courseid), max(grade) from table
+    group by studentid
+	```
+	This does not work. min(courseid) will return the min of all the courseids in the studentid group and max(grade) will return the max of all the grades in studentid. This min and max are independent of each other.
+  - ```sql
+    select studentid, courseid, max(grade) from table
+	group by studentid
+    ``` 
+	This does not work. As courseid is not in group by.
   - group by ShipperID, then max() select the max CustomerID row ordered according to EmployeeID in group ShipperID
   - EmployeeID is not in group by or aggregation count() or sum()
+
+In MySQL,
+```sql
+SELECT studentid, courseid, grade
+   FROM
+     (SELECT studentid, courseid, grade, 
+                  @student_rank := IF(@current_student = studentid, @student_rank + 1, 1) AS student_rank,
+                  @current_student := studentid
+       FROM table
+       ORDER BY studentid, grade DESC
+     ) ranked
+   WHERE student_rank <= 1
+```
+
+In Orders, StudentID -> ShipperID, courseID -> EmployeeID, grade -> CustomerID
+https://www.w3schools.com/sql/trysql.asp?filename=trysql_select_all
+
+```sql
+select b.ShipperID, min(b.EmployeeID), max(b.CustomerID) from Orders b
+join (
+select ShipperID, max(CustomerID) as CustomerID from Orders c
+group by ShipperID
+) a
+on a.ShipperID = b.ShipperID 
+and a.CustomerID = b.CustomerID
+group by b.ShipperID
+```
+
+```sql
+SELECT ShipperID, EmployeeID, CustomerID
+   FROM
+     (SELECT ShipperID, EmployeeID, CustomerID, 
+                  @Shipper_rank := IF(@current_Shipper = ShipperID, @Shipper_rank + 1, 1) AS Shipper_rank,
+                  @current_Shipper := ShipperID
+       FROM Orders
+       ORDER BY ShipperID, CustomerID DESC
+     ) ranked
+   WHERE Shipper_rank <= 1
+```
 
 ### Sampling With rand()
 
