@@ -334,8 +334,7 @@ where LastName regexp '^D'
 
 ### Where vs Having
 
-Select the *EmployeeID* with the number of orders larger than 10 from **Orders**
-https://www.w3schools.com/sql/trysql.asp?filename=trysql_select_all
+[Select the *EmployeeID* with the number of orders larger than 10 from **Orders**](https://www.w3schools.com/sql/trysql.asp?filename=trysql_select_all)
 
 ```sql
 SELECT EmployeeID, count(OrderID) FROM Orders
@@ -347,8 +346,7 @@ Note:
   - “WHERE” vs “HAVING”: The WHERE clause cannot be used to restrict groups. The HAVING clause should be used.
   - “HAVING” need to be used after ‘GROUP BY’
   
-#### 找出EmployeeID和所有对应的OrderID，EmployeeID有多于25的OrderID
-https://www.w3schools.com/sql/trysql.asp?filename=trysql_select_all
+#### [找出EmployeeID和所有对应的OrderID，EmployeeID有多于25的OrderID](https://www.w3schools.com/sql/trysql.asp?filename=trysql_select_all)
 
 ```sql
 SELECT a.EmployeeID, a.OrderID, b.cnt 
@@ -376,8 +374,7 @@ Order by a.EmployeeID, a.OrderID
   
 ### Most common elements in a column
 
-The most frequent *Quantity* in **OrderDetails**
-https://www.w3schools.com/sql/trysql.asp?filename=trysql_select_all
+[The most frequent *Quantity* in **OrderDetails**](https://www.w3schools.com/sql/trysql.asp?filename=trysql_select_all)
 
 ```sql
 select Quantity, max(cnt) from (
@@ -414,10 +411,14 @@ SELECT Quantity, count(Quantity) as cnt FROM [OrderDetails]
 group by Quantity) b where b.cnt >= a.cnt) = 2
 ```
 
+Note:
+  - one column table to two columns table:
+    - one column, itself
+	- second column, **count(itself)** with **group by itself**
+
 ### Accumulative Sum 
 
-Get the first *OrderDetailID* from which the accumulative number of orders larger than 80 from **OrderDetails**
-https://www.w3schools.com/sql/trysql.asp?filename=trysql_select_all
+[Get the first *OrderDetailID* from which the accumulative number of orders larger than 80 from **OrderDetails**](https://www.w3schools.com/sql/trysql.asp?filename=trysql_select_all)
 
 ```sql
 select min(OrderDetailID), accsum from (
